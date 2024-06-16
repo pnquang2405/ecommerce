@@ -7,6 +7,7 @@ const KeyTokenService = require("./keyToken.service");
 const { createTokenPair } = require("../auth/authUtils");
 const { getInfoData } = require("../utils/index");
 const { BadRequestError } = require("../core/error.response");
+const { findByEmail } = require("../services/shop.service");
 
 const RoleShop = {
   SHOP: "SHOP",
@@ -44,8 +45,6 @@ class AccessService {
         },
       });
 
-      console.log({ privateKey, publicKey });
-
       const publicKeyString = await KeyTokenService.createKeyToken({
         userId: newShop._id,
         publicKey,
@@ -75,6 +74,65 @@ class AccessService {
         },
       };
     }
+  };
+
+  /*
+  1 - check email in db
+  2 - match password
+  3 - create AT vs RT and save
+  4 - generate tokens
+  5 - get data return login
+  */
+  static signIn = async ({ email, password, refreshToken = null }) => {
+    const foundShop = await findByEmail({ email });
+    if (!foundShop) {
+      throw new BadRequestError(" Shop not registerd");
+    }
+
+    const matchPassword = bcrypt.compare(password, foundShop.password);
+    if (!matchPassword) {
+      throw new UnauthorizedRequestError("Authenticationn Error");
+    }
+
+    const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 4096,
+      publicKeyEncoding: {
+        type: "pkcs1",
+        format: "pem",
+      },
+      privateKeyEncoding: {
+        type: "pkcs1",
+        format: "pem",
+      },
+    });
+
+    const { _id: userId } = foundShop;
+
+    const tokens = await createTokenPair(
+      { userId, email },
+      publicKey,
+      privateKey
+    );
+
+    await KeyTokenService.createKeyToken({
+      userId,
+      publicKey,
+      privateKey,
+      refreshToken: tokens.refreshToken,
+    });
+
+    return {
+      shop: getInfoData({
+        fileds: ["_id", "name", "email"],
+        object: foundShop,
+      }),
+      tokens,
+    };
+  };
+
+  static logout = async (keyStore) => {
+    const delKey = await KeyTokenService.removeKeyById(keyStore._id);
+    return delKey;
   };
 }
 
