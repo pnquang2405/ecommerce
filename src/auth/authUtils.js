@@ -27,7 +27,7 @@ const createTokenPair = async (payload, publicKey, privateKey) => {
   } catch (error) {}
 };
 
-const authentication = asyncHander(async (req, res, nenxt) => {
+const authentication = asyncHander(async (req, res, next) => {
   const userId = req.headers[HEADER.CLIENT_ID];
   if (!userId) throw new AuthFailureError("Invalid Request");
 
@@ -43,13 +43,18 @@ const authentication = asyncHander(async (req, res, nenxt) => {
       throw new AuthFailureError("Invalid Request");
 
     req.keyStore = keyStore;
-    return nenxt();
+    return next();
   } catch (error) {
     throw error;
   }
 });
 
+const verifyJWT = async (token, keySecret) => {
+  return await JWT.verify(token, keySecret);
+};
+
 module.exports = {
   createTokenPair,
   authentication,
+  verifyJWT,
 };
