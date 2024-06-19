@@ -7,13 +7,13 @@ const { asyncHandler } = require("../../auth/checkAuth");
 const { authentication } = require("../../auth/authUtils");
 
 //singup
-router.post("/shop/signup", asyncHandler(accessController.signUp));
-router.post("/shop/signin", asyncHandler(accessController.signIn));
+router.post("/signup", asyncHandler(accessController.signUp));
+router.post("/signin", asyncHandler(accessController.signIn));
 
 router.use(authentication);
-router.post("/shop/signout", asyncHandler(accessController.signOut));
+router.post("/signout", asyncHandler(accessController.signOut));
 router.post(
-  "/shop/handlerRefershToken",
+  "/handlerRefershToken",
   asyncHandler(accessController.handlerRefreshToken)
 );
 

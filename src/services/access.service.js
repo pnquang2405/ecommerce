@@ -128,42 +128,23 @@ class AccessService {
     return delKey;
   };
 
-  static handlerRefreshToken = async (refreshToken) => {
-    const foundToken = await KeyTokenService.findByRefreshTokenUsed(
-      refreshToken
-    );
-
-    if (foundToken) {
-      const { userId, email } = await verifyJWT(
-        refreshToken,
-        foundToken.priavteKey
-      );
-      console.log({ userId, email });
+  static handlerRefreshToken = async ({ keyStore, user, refreshToken }) => {
+    const { userId, email } = user;
+    if (keyStore.refreshTokensUsed.includes(refreshToken)) {
       await KeyTokenService.deleteKeyById(userId);
-      throw new ForbidenError("Something wrong happed!! Please relogin");
+      throw new ForbidenError("Something wrong happed !! Pls relogin");
     }
 
-    const holderToken = await KeyTokenService.findByRefreshToken(refreshToken);
-    if (!holderToken) {
+    if (keyStore.refreshToken !== refreshToken)
       throw new AuthFailureError("Shop not registered");
-    }
-
-    const { userId, email } = await verifyJWT(
-      refreshToken,
-      holderToken.privateKey
-    );
-    console.log("[2]: ", { userId, email });
-
-    const foundShop = await findByEmail({ email });
-    if (!foundShop) {
-      throw new AuthFailureError("Shop not found");
-    }
 
     const tokens = await createTokenPair(
       { userId, email },
-      holderToken.publicKey,
-      holderToken.privateKey
+      keyStore.publicKey,
+      keyStore.privateKey
     );
+
+    const holderToken = await KeyTokenService.findByRefreshToken(refreshToken);
 
     await holderToken.updateOne({
       $set: {
@@ -175,7 +156,7 @@ class AccessService {
     });
 
     return {
-      user: { userId: userId, email: email },
+      user,
       tokens,
     };
   };
