@@ -58,6 +58,36 @@ class ProductController {
       metadata: await ProductService.getListSearchProduct(req.params),
     }).send(res);
   };
+
+  getAllProducts = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get list of products",
+      metadata: await ProductService.findAllProducts(req.query),
+    }).send(res);
+  };
+
+  findProduct = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get list product successfully",
+      metadata: await ProductService.findOneProduct({
+        product_id: req.params.product_id,
+      }),
+    }).send(res);
+  };
+
+  updateProduct = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Update product successfully",
+      metadata: await ProductService.updateProduct(
+        req.body.product_type,
+        req.params.productId,
+        {
+          ...req.body,
+          product_shop: req.user.userId,
+        }
+      ),
+    }).send(res);
+  };
 }
 
 module.exports = new ProductController();

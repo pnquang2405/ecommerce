@@ -10,6 +10,8 @@ router.get(
   "/search/:key",
   asyncHandler(productController.getListSearchProduct)
 );
+router.get("", asyncHandler(productController.getAllProducts));
+router.get("/:product_id", asyncHandler(productController.findProduct));
 
 router.use(authentication);
 router.post("", asyncHandler(productController.createProduct));
@@ -26,5 +28,7 @@ router.post(
   "/unPublish/:productId",
   asyncHandler(productController.unPublishByShop)
 );
+
+router.patch("/:productId", asyncHandler(productController.updateProduct));
 
 module.exports = router;
